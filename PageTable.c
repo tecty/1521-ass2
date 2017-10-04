@@ -82,33 +82,49 @@ int requestPage(int pno, char mode, int time)
    switch (p->status) {
    case NOT_USED:
    case ON_DISK:
-      // TODO: add stats collection
+      //  add stats collection
+      countPageFault();
       fno = findFreeFrame();
       if (fno == NONE) {
          int vno = findVictim(time);
 #ifdef DBUG
          printf("Evict page %d\n",vno);
 #endif
-         // TODO:
+
          // if victim page modified, save its frame
+         if (PageTable[vno].modified == 1) {
+             /* save this page */
+             saveFrame(PageTable[vno].frame);
+         }
          // collect frame# (fno) for victim page
+         fno = PageTable[vno].frame;
          // update PTE for victim page
          // - new status
+         PageTable[vno].status = ON_DISK;
          // - no longer modified
+         PageTable[vno].modified = 0;
          // - no frame mapping
+         PageTable[vno].frame = NONE;
          // - not accessed, not loaded
+         PageTable[vno].accessTime = PageTable[vno].loadTime = NONE;
       }
       printf("Page %d given frame %d\n",pno,fno);
-      // TODO:
+
       // load page pno into frame fno
+      loadFrame(fno, pno, time);
       // update PTE for page
       // - new status
+      p->status = IN_MEMORY;
       // - not yet modified
+      p->modified = 0;
       // - associated with frame fno
+      p->frame = fno;
       // - just loaded
+      p->loadTime = time;
       break;
    case IN_MEMORY:
-      // TODO: add stats collection
+      // add stats collection
+      countPageHit();
       break;
    default:
       fprintf(stderr,"Invalid page status\n");
@@ -129,13 +145,33 @@ int requestPage(int pno, char mode, int time)
 
 static int findVictim(int time)
 {
-   int victim = 0;
+   int victim = NONE;
+   // record the oldest time
+   int oldest = time;
    switch (replacePolicy) {
    case REPL_LRU:
-      // TODO: implement LRU strategy
+      // implement LRU strategy
+      for (int i = 0; i < nPages; i++) {
+          /* go throught all the page for the oldest page */
+          if (PageTable[i].accessTime != NONE && PageTable[i].accessTime < oldest ) {
+              /* replace oldest and the victim */
+              victim = i;
+              oldest = PageTable[i].accessTime;
+          }
+      }
+
+
       break;
    case REPL_FIFO:
-      // TODO: implement FIFO strategy
+      //  implement FIFO strategy
+      for (int i = 0; i < nPages; i++) {
+          /* go throught all the page for the oldest page */
+          if (PageTable[i].loadTime != NONE && PageTable[i].loadTime < oldest ) {
+              /* replace oldest and the victim */
+              victim = i;
+              oldest = PageTable[i].loadTime;
+          }
+      }
       break;
    case REPL_CLOCK:
       return 0;
