@@ -124,6 +124,12 @@ void pushQueue(int pno){
         this_node = newNode(pno);
     }
     else {
+        if (replacePolicy == REPL_CLOCK) {
+            /* don't push at the end of the queue */
+            return;
+        }
+
+
         // push back this node to the tail to of the queue
         // stitching the gap, caused by the leaving of this_node
         if (this_node == queue->hand) {
