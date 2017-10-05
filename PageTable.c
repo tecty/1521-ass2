@@ -91,6 +91,19 @@ dll_n findNode(int pno){
     return NULL;
 }
 
+void printQueue(){
+#ifdef MYDEBUG
+    dll_n this_node = queue->hand;
+    printf("%d", this_node->pno );
+    for (this_node = this_node->next; this_node != queue->hand; this_node = this_node-> next) {
+        /* print all the content in the queue */
+        printf(" -> %d",this_node->pno );
+    }
+    printf("\n");
+#endif
+
+}
+
 //  functions for manage the queue
 void pushQueue(int pno){
     // push the record in queue by provide pageNo
@@ -113,6 +126,12 @@ void pushQueue(int pno){
     else {
         // push back this node to the tail to of the queue
         // stitching the gap, caused by the leaving of this_node
+        if (this_node == queue->hand) {
+            /* prevent the hand point to only this_node */
+            queue->hand = queue->hand->next;
+        }
+
+
         this_node->prev->next = this_node->next;
         this_node->next->prev = this_node->prev;
 
@@ -122,6 +141,7 @@ void pushQueue(int pno){
     queue->hand->prev->next = this_node;
     queue->hand->prev = this_node;
     this_node->next = queue->hand;
+    printQueue();
 }
 
 
